@@ -272,8 +272,9 @@ on another port with `KIROCREW_PORT`.
 Kiro Crew auto-compacts at `session.autocompact_pct` context usage (70% by
 default for a new install — an existing `config.json` keeps whatever value it
 already stores, which for installs created before this default changed is
-`90.0`; check with `kirocrew config get session.autocompact_pct`). If
-compaction fires often:
+`90.0`; check with `kirocrew config get session.autocompact_pct`). The KAS
+backend is the exception: it decides when to compact on its own, and this
+setting does not change that. If compaction fires often:
 
 - Reduce always-on skills, which consume context in every session
 - Check memory size: large preferences and project files eat into the budget
