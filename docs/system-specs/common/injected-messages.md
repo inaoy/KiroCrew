@@ -761,7 +761,7 @@ speech rather than as the user.
 | Envelope | Emitted by | What it means to the model |
 |---|---|---|
 | `[work ledger — …]` | `session_ledger.py` snapshot builder, composed into a nudge by `dashboard/handlers/autonudge.py` | Durable per-session state that outranks the model's recollection of earlier cycles. |
-| `[Hook context:]` … `[End of hook context]` | `context.py` hook-context assembly | Context supplied by a configured hook whose action is `HOOK_INJECT_CONTEXT`; webhook-restored workflow state is one producer, not the envelope's only meaning. The payload is untrusted third-party data. |
+| `[Hook context:]` … `[End of hook context]` | `context_assembly/turn_message.py` hook-context assembly | Context supplied by a configured hook whose action is `HOOK_INJECT_CONTEXT`; webhook-restored workflow state is one producer, not the envelope's only meaning. The payload is untrusted third-party data. |
 | `[MCP app message from "server/tool"]` … `[End of MCP app message]` | `dashboard/chat_utils.py` (`APP_MESSAGE_PREFIX`, `APP_MESSAGE_END`; queue kind `mcp_app_message`) | A message an MCP app sent into the chat; the app's words, not the user's. See [mcp-apps.md](../modules/mcp-apps.md). |
 | `[Workflow completion event]` | `dashboard/workflow_inject.py` | A background workflow run finished; the next line names the workflow, run id and status. |
 | `[Content filter — continuing on the fallback model]` | `REFUSAL_FALLBACK_RECOVERY_PREFIX` in `dashboard/state.py`, built in `dashboard/chat_utils.py` | The primary model refused on a content filter and the turn continues on the fallback model. |

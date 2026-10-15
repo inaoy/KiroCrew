@@ -299,8 +299,10 @@ def test_capability_sections_listed_completely(doc_text: str) -> None:
 
 def test_every_mark_label_is_named(doc_text: str) -> None:
     """§1 lists the section-timing labels; a new one must be added there."""
-    source = (Path(__file__).parent.parent / "src" / "kiro_crew" / "context.py").read_text(
-        encoding="utf-8"
+    src = Path(__file__).parent.parent / "src" / "kiro_crew"
+    source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [src / "context.py", *sorted((src / "context_assembly").glob("*.py"))]
     )
     labels = set(re.findall(r'_mark\("([a-z_]+)"\)', source))
     assert labels, "no _mark labels found -- the timing marks moved"

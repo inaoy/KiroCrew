@@ -6,11 +6,12 @@ what a parent withheld. :func:`_render_folder_steering_section` is the one folde
 steering renderer, and :func:`skill_parts` the one loader call, that session start
 and post-compaction re-injection share.
 
-Four inclusion rules stay on :mod:`kiro_crew.context`: ``_skills_injection_plan``
+Three inclusion rules stay on :mod:`kiro_crew.context`: ``_skills_injection_plan``
 (a doc pins its return expression there), ``_config_scoped_groups`` (callers rebind
-it), ``_project_steering_delivered`` (the provider-identity guard scans that file)
-and the CC-backend steering loader, beside the agent-spec read it shares with the
-agent prompt.
+it) and ``_project_steering_delivered`` (the provider-identity guard scans that
+file). The CC-backend steering loader lives in
+:mod:`kiro_crew.context_assembly.agent_spec`, beside the agent-spec read it shares
+with the agent prompt.
 
 New inclusion rules -- which group, skill or steering source reaches a session --
 belong here.

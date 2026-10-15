@@ -11,8 +11,8 @@ charter routes an engineering note to `docs/`. The packaged index links across t
 it.
 
 Everything here is read from the current code, and citations name a file and a
-**symbol** (`src/kiro_crew/context.py` → `build_message`) rather than a line
-number, which rots. Where an older doc disagreed with the code, that doc was
+**symbol** (`src/kiro_crew/context_assembly/turn_message.py` → `build_message`)
+rather than a line number, which rots. Where an older doc disagreed with the code, that doc was
 corrected rather than annotated.
 
 Detail this file deliberately does not restate:
@@ -29,10 +29,11 @@ Detail this file deliberately does not restate:
 
 ## 1. Main chat session start
 
-One function assembles the whole first-turn prompt: `context.py` →
-`build_message` with `is_new_session=True`. It appends ~30 separately sourced
-strings and returns them joined. `context.py` → `build_session_context` builds the
-middle — the part wrapped in `[SESSION CONTEXT …]`, and the only part injected
+One function assembles the whole first-turn prompt: `ContextBuilder.build_message`
+(`context_assembly/turn_message.py`) with `is_new_session=True`. It appends ~30
+separately sourced strings and returns them joined.
+`ContextBuilder.build_session_context` (`context_assembly/session_start.py`) builds
+the middle — the part wrapped in `[SESSION CONTEXT …]`, and the only part injected
 once rather than per turn.
 
 ### Block order
@@ -283,7 +284,7 @@ The mechanism, when on:
 
 #### Per-session body dedup
 
-`ContextBuilder._dedup_triggered_bodies` in `context.py` keeps, per provider
+`ContextBuilder._dedup_triggered_bodies` (`context_assembly/delivery_records.py`) keeps, per provider
 session, a digest-keyed record of which skill bodies the prompt carried. Both the
 session key and each skill key are stored as fixed-size digests, and both levels
 are LRU-bounded: `_SENT_SKILL_BODY_SESSIONS` (512) sessions and
@@ -679,7 +680,7 @@ per-member permission control; both exist today, in the forms above.
 
 | Question | Files |
 |---|---|
-| What is in the first-turn prompt, in what order | `src/kiro_crew/context.py` (`build_message`, `build_session_context`), composed from the owners in `src/kiro_crew/context_assembly/` |
+| What is in the first-turn prompt, in what order | `src/kiro_crew/context.py` (`ContextBuilder`), whose `build_message` and `build_session_context` live in `src/kiro_crew/context_assembly/turn_message.py` and `session_start.py`, composed from the other owners there |
 | Which block is which, and how big it was | `src/kiro_crew/context_blocks.py` (`_MARKERS`, `_CLOSERS`, `measure_prompt`) |
 | Budgets, caps, the protected ceiling | `src/kiro_crew/context_assembly/budget.py` (`_budget`, `_ResolvedCaps`, `admit_background`), `src/kiro_crew/context.py` (`_resolve_caps`) |
 | Marker and fence scrubs of untrusted text | `src/kiro_crew/context_assembly/markers.py`, `src/kiro_crew/context.py` (`_neutralize_structural_markers`) |
@@ -689,7 +690,7 @@ per-member permission control; both exist today, in the forms above.
 | Skill index, pinned bodies, discovery | `src/kiro_crew/skill_runtime/delivery.py` (`get_context`), `src/kiro_crew/skills_body_reads.py` (`load_skill`) |
 | Trigger matching, and its model-picked override | `src/kiro_crew/trigger_match.py`, `src/kiro_crew/skills_selection.py` (`get_triggered_skills`), `src/kiro_crew/skill_runtime/delivery.py` (`split_triggered`, `trigger_hint`), `src/kiro_crew/decisions/points/skills_select.py` |
 | Which agents get skills | `src/kiro_crew/context.py` (`_skills_injection_plan`), `src/kiro_crew/agent_discovery.py` (`agent_skill_globs`, `expand_skill_uri`) |
-| Steering and hooks | `src/kiro_crew/context.py` (`_load_steering_resources`, `steering_target_admissible`), `src/kiro_crew/hooks.py` |
+| Steering and hooks | `src/kiro_crew/context_assembly/agent_spec.py` (`_load_steering_resources`, `steering_target_admissible`), `src/kiro_crew/hooks.py` |
 | Post-compaction re-injection | `src/kiro_crew/messaging/turn_bracket.py` (`TurnBracket`, `consume_reinjection`, `rearm_reinjection`; re-exported by `messaging/dispatch.py`) |
 | Ledger snapshot on nudge turns | `src/kiro_crew/session_ledger.py` (`render_snapshot`), `src/kiro_crew/dashboard/handlers/autonudge.py` |
 | Sub-agent context scope | `src/kiro_crew/subagent.py` (`_context_groups_of`), `src/kiro_crew/mcp_tools/spawn.py` |

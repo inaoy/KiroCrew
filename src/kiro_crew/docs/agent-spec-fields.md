@@ -68,7 +68,7 @@ below is what happens to the other five.
 These two are separate rows because they are separate axes, and only one is
 dormant. `provider=claude_code` is dormant in the public build, whose config
 schema admits only `acp` (`provider_identity.py`); the `is_cc` branches in
-`src/kiro_crew/context.py` are what remain of it, and they are what make the
+`src/kiro_crew/context_assembly/` are what remain of it, and they are what make the
 `resources` field mean two different things (see below). `acp_backend="claude"`
 is the harness and is a different matter: `resolve_selected_backend` accepts it,
 so the public build can select it, and its field-by-field ruling is recorded in
@@ -238,7 +238,7 @@ the spawn window, which is why a prepared view is preferred.
    `model` reaches them with `session/set_config_option` after `session/new` —
    the same channel `codex`, `opencode` and `goose` use, which is why `model` is
    the one field no mirror needs to carry. And `prompt` arrives as context text on
-   every harness alike (`context.py` appends the `[AGENT SYSTEM PROMPT]` block for
+   every harness alike (`build_message` appends the `[AGENT SYSTEM PROMPT]` block for
    a custom agent with no backend condition on it). What a mirror decides, and
    these two therefore go without, is the MCP surface.
 
@@ -394,7 +394,7 @@ search), and that nothing else — a tool result, a file, a page, a later messag
 earns the same trust. A bare pointer left the model to choose between the two
 rules, and it refused the block as a prompt injection.
 The kiro-family backends deliver the spec prompt NATIVELY — kiro-cli reads the
-file, KAS inlines it over the wire — while `context.py` injects the RESOLVED
+file, KAS inlines it over the wire — while `ContextBuilder` injects the RESOLVED
 operating contract on session start for EVERY backend. A `file://` template here
 would deliver the persona twice — once natively (raw, with `{{…}}` placeholders
 unresolved) and once through the resolved injection. The stub keeps the injection as the
@@ -411,7 +411,7 @@ persona natively — the same double delivery tracked in #13305 — and one stil
 carrying a superseded stub keeps that older, weaker system-role framing until
 the carve-out is settled there. The two readers
 that must not deliver the managed contract twice (member essentials and the
-session-start load in `context.py`) recognise the stub and managed file URIs
+session-start load in `context_assembly/agent_spec.py`) recognise the stub and managed file URIs
 through `is_managed_prompt`: essentials omit the contract, and the session-start load
 resolves it to the current contract file for ANY spec carrying it — owner template,
 fork or template copy alike — so a fork inheriting the managed contract is
@@ -533,7 +533,7 @@ records, so it picks up the new path when the member is re-saved in
 Capabilities.
 
 `file://<glob>` is a steering glob, and a narrower mechanism than it looks:
-`_load_steering_resources` in `src/kiro_crew/context.py` reads `resources` from
+`_load_steering_resources` in `src/kiro_crew/context_assembly/agent_spec.py` reads `resources` from
 `kirocrew.json` specifically — not from the session's active agent — globs each
 pattern against `$HOME`, and admits only `*.md` files that stay under the trust
 base and are not sensitive locations.
@@ -863,7 +863,7 @@ fence requirement, the JSON-twin precedence, and which backends run the form.
 | both on-disk forms, the parser | `src/kiro_crew/agent_spec_format.py` |
 | `name`, `description`, `model`, `welcomeMessage`, the roster | `src/kiro_crew/agent_discovery.py` |
 | `resources` `skill://` | `src/kiro_crew/agent_discovery.py` (`skill_resource_uris`, `expand_skill_uri`, `skill_uri_for_path`, `agent_skill_globs`); a generated spec's own mapping: `src/kiro_crew/agent_materialization/skill_resources.py` |
-| `resources` `file://`, the injection decision | `src/kiro_crew/context.py` (`_load_steering_resources`, `_skills_injection_plan`) |
+| `resources` `file://`, the injection decision | `src/kiro_crew/context_assembly/agent_spec.py` (`_load_steering_resources`), `src/kiro_crew/context.py` (`_skills_injection_plan`) |
 | `tools`, `allowedTools`, `excludedTools`, `mcpServers`, `hooks`, `toolsSettings` — the default spec's composition and the rebuild order | `src/kiro_crew/agent.py` (`build_agent_config`, `_refresh_dynamic_fields`, `rebuild_agent_config`), the facade every writer below is reached through |
 | `hooks` — normalization and the kiro-cli object form | `src/kiro_crew/agent_materialization/kiro_hooks.py` |
 | `mcpServers` — Crew's own managed servers | `src/kiro_crew/agent_materialization/managed_mcp.py` |

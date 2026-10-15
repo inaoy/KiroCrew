@@ -9,8 +9,9 @@ mapped through both. Every untrusted value is screened or scrubbed here before i
 lands beside a trusted frame.
 
 The member section, the rules gate and the lifecycle verdict that decides both stay
-at the ``members.member_turn_context`` chokepoint in :mod:`kiro_crew.context`, as do
-the trigger-matched skill bodies and the request boundary itself.
+at the ``members.member_turn_context`` chokepoint in ``ContextBuilder.build_message``
+(:mod:`kiro_crew.context_assembly.turn_message`), as do the trigger-matched skill
+bodies and the request boundary itself.
 
 New per-turn blocks belong here.
 """

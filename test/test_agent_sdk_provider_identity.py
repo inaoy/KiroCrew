@@ -173,6 +173,7 @@ def test_importing_this_module_does_not_load_the_acp_package() -> None:
 #: defines on its own, so the literal ratchet reads those owners as
 #: part of that file.
 _COMPOSED_OWNERS = {
+    "context.py": "context_assembly",
     "dashboard/handlers/agents.py": "dashboard/agent_admin",
     "dashboard/chat_handlers.py": "dashboard/chat_api",
     "dashboard/chat_runner.py": "dashboard/chat_turn",

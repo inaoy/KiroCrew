@@ -1076,7 +1076,7 @@ _EXPECTED_CALL_SITE_LABELS: dict[str, list[tuple[str, str]]] = {
         ("connections_warm_mint", "dashboard"),
         ("connections_warm_mint", "dashboard"),
     ],
-    "kiro_crew/context.py": [
+    "kiro_crew/context_assembly/agent_spec.py": [
         ("agent_prompt", "context"),
         ("steering_resources", "unknown"),
     ],

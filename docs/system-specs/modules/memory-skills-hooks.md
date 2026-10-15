@@ -4153,7 +4153,7 @@ See
 [context management](../../architecture/context-management.md#4-default-agent-vs-other-agents)
 for native view and inherited steering behavior.
 
-**Usage ledger (`skill_usage.py`, `SkillUsageLedger`):** in-memory per-skill hit tally with debounced, atomic persistence to `skill-usage.json` (`SKILL_USAGE_FILENAME`, co-located with the Kiro Crew home). Entries older than a 30-day TTL (`_MAX_AGE_SECS`) are dropped on load/flush so a stale skill stops occupying a top-K slot. Hits are recorded wherever a body reaches the model: the **body-delivery loop** in `context.py` (`_record_use`, called only after `load_skill` succeeds and the body is appended to the prompt), `resolve_dollar_skills`, an exact `skill_search` read (below), and direct reads of `SKILL.md` (see **Direct reads**). Since `max_triggered` defaults to 0 the body-delivery recorder is inactive in stock config, so the other three supply the hits unless the trigger matcher is re-enabled (`max_triggered > 0`). A trigger match alone does NOT earn a hit — only actual delivery does, so pointer-only skills and false-positive matches do not inflate the ranking. Best-effort: ledger init failure falls back to recency-only / unweighted ranking without breaking skill loading.
+**Usage ledger (`skill_usage.py`, `SkillUsageLedger`):** in-memory per-skill hit tally with debounced, atomic persistence to `skill-usage.json` (`SKILL_USAGE_FILENAME`, co-located with the Kiro Crew home). Entries older than a 30-day TTL (`_MAX_AGE_SECS`) are dropped on load/flush so a stale skill stops occupying a top-K slot. Hits are recorded wherever a body reaches the model: the **body-delivery loop** in `context_assembly/turn_message.py` (`ContextBuilder.build_message`; `_record_use`, called only after `load_skill` succeeds and the body is appended to the prompt), `resolve_dollar_skills`, an exact `skill_search` read (below), and direct reads of `SKILL.md` (see **Direct reads**). Since `max_triggered` defaults to 0 the body-delivery recorder is inactive in stock config, so the other three supply the hits unless the trigger matcher is re-enabled (`max_triggered > 0`). A trigger match alone does NOT earn a hit — only actual delivery does, so pointer-only skills and false-positive matches do not inflate the ranking. Best-effort: ledger init failure falls back to recency-only / unweighted ranking without breaking skill loading.
 
 **Dollar-load transcript snapshot:** the dashboard chat runner records each
 successful `$skillname` selection as one `system` row with
@@ -5127,7 +5127,7 @@ repeats within one session; the opt-out also saves the first send, for a skill
 whose author declares it an offer rather than a mandate. The two are orthogonal,
 and confined project skills take neither (they always get the full body).
 
-**What `_record_use` counts.** Actual body delivery — the call sits in the body-delivery loop in `context.py`, after `load_skill` confirms the content and the body is appended to the prompt. Only skills whose body is actually injected earn a hit; pointer-only skills (`inject_on_trigger: false`) and undelivered false positives contribute nothing to the ranking. Three recorders feed it: trigger body delivery (inactive in stock config, where `max_triggered` defaults to 0), `$skillname` resolution in `resolve_dollar_skills` (an intentional user action), and a completed direct read of a skill's `SKILL.md` through a tool (`skill_runtime/read_credit.credit_skill_reads`, credited only after the read completes, so a denied or failed call leaves no delivery). This ensures the lazy-load hotness ledger ranks by actual utility to the agent, not by how often the word-overlap matcher fires on common words.
+**What `_record_use` counts.** Actual body delivery — the call sits in the body-delivery loop of `ContextBuilder.build_message` (`context_assembly/turn_message.py`), after `load_skill` confirms the content and the body is appended to the prompt. Only skills whose body is actually injected earn a hit; pointer-only skills (`inject_on_trigger: false`) and undelivered false positives contribute nothing to the ranking. Three recorders feed it: trigger body delivery (inactive in stock config, where `max_triggered` defaults to 0), `$skillname` resolution in `resolve_dollar_skills` (an intentional user action), and a completed direct read of a skill's `SKILL.md` through a tool (`skill_runtime/read_credit.credit_skill_reads`, credited only after the read completes, so a denied or failed call leaves no delivery). This ensures the lazy-load hotness ledger ranks by actual utility to the agent, not by how often the word-overlap matcher fires on common words.
 
 **Context Budget endpoint.** `GET /api/skills/-/budget` returns the 30-day
 per-skill injection cost with alias folding across renamed/aliased ledger keys.
@@ -6273,14 +6273,19 @@ their reported benchmark gains are not Kiro Crew measurements.
 #### Ownership
 
 `context.py` is the facade and the assembly owner. `ContextBuilder.build_session_context`
-and `build_message` decide block order and which lifecycle carries each block. It
-also keeps the per-target store handles and their routing (`store_of_session`,
-`prepare_store_vectors`, `ContextBuilder.ensure_store`, `_build_store_vectors`),
-every transcript read and redaction a prompt replays, the agent-spec reads
-(`_load_agent_prompt`, `_load_steering_resources`), the critical-rules contract, the
-UI-language renderers, and each name callers rebind on it. The rest is composed from
-`src/kiro_crew/context_assembly/`, and every name stays importable from
-`kiro_crew.context`:
+and `build_message` decide block order and which lifecycle carries each block.
+`ContextBuilder` is defined there with its state (`__init__`), its constants and its
+store handles (`get_memory_for`, `get_lessons_for`, the async `ensure_store`); the
+bodies of its other methods live in the owners below and are bound onto the class
+(`build_message = ...`, `staticmethod(...)` for the static ones), so
+`ContextBuilder.<method>` is the moved function itself and a class or instance patch
+of it applies everywhere. Their `__qualname__` and `__module__` name the owner; nothing
+reads either. The facade also keeps the per-target store caches and their routing
+(`store_of_session`, `prepare_store_vectors`, `_build_store_vectors`), the transcript
+reads a prompt replays and the redaction of the session replay
+(`build_session_replay`), every async function, and each name callers rebind on it.
+The rest is composed from `src/kiro_crew/context_assembly/`, and every name stays
+importable from `kiro_crew.context`:
 
 | Owner | Responsibility; new work of this kind goes here |
 |---|---|
@@ -6292,9 +6297,16 @@ UI-language renderers, and each name callers rebind on it. The rest is composed 
 | `member.py` | the member identity section and the V2 essentials envelope; delivery stays at the `member_turn_context` chokepoint |
 | `store_admission.py` | which store answers each memory and lesson section, the per-message lessons block, the shown-lesson record |
 | `turn.py` | follow-up turn additions (post-compaction re-injection, Slack thread context, per-turn rails, guidance) and the user's own turn text |
+| `output_contract.py` | the output contract a session starts with: the critical-rules block per runtime (`_critical_rules_for`) and the `[UI LANGUAGE]` steer (`ui_language_tag` stays on the facade) |
+| `session_start.py` | `ContextBuilder.build_session_context`: the session-start block's order, its section timings (`_mark`, `_emit_context_section_timings`) and the redaction of replayed thread history |
+| `turn_message.py` | `ContextBuilder.build_message`: what one turn sends and in which order, the trigger-matched skill-body delivery and its audit, the request boundary |
+| `agent_spec.py` | the agent prompt (`_resolve_agent_prompt`, `_load_agent_prompt`, `_read_prompt_file`), its templates and the per-session readings they resolve to (`_session_reading`), and the agent-spec reads (`_read_include_crew_context`, `_load_steering_resources`, `steering_target_admissible`) |
+| `delivery_records.py` | per-session records of what a session was already sent: the shown-lesson record's upkeep and the sent skill bodies with their per-turn undo (`rollback_skill_bodies`, `commit_skill_bodies`) |
+| `member_gates.py` | the member desk and dispatch gates (`_desk_withheld`, `_member_dispatch_held`) and the builder's entry points into `member.py` (`_build_member_section`, `_build_v2_essentials`) |
 
 At module scope an owner imports only its sibling owners and type-checking-only
-names; any other Kiro Crew import is function-local. Owners read every name callers
+names; any other Kiro Crew import is function-local. An owner defines no async function
+and never reads `__file__`: those stay on the facade. Owners read every name callers
 rebind on `kiro_crew.context` through it at call time, so a patch there still
 reaches the moved code; `test/test_context_composition_contract.py` derives that set
 from the tests and pins it.

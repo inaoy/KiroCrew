@@ -8,9 +8,9 @@ the section its ``{{COMPUTER_USE_BLOCK}}`` resolves to. Each takes its inputs as
 arguments and reads no transcript, store or file, so a render is a pure function of
 config and the trusted dispatcher metadata.
 
-The critical-rules contract and the UI-language renderers stay on
-:mod:`kiro_crew.context`: the contract's text is pinned in place there, and the
-UI-language catalog mirror is where its drift test names it.
+The critical-rules contract and the UI-language renderers live in
+:mod:`kiro_crew.context_assembly.output_contract`, the output contract a session
+starts with.
 
 New conduct blocks belong here; a block that reads memory or a transcript does not.
 """

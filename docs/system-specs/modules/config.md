@@ -3653,7 +3653,7 @@ chunk separately (`CATALOG_CHUNK_BUDGETS`).
 
 #### The tag reaches the agent, too
 
-`context.py::_build_ui_language_section` injects the configured tag — after the
+`context_assembly/output_contract.py::_build_ui_language_section` injects the configured tag — after the
 catalog-membership gate described above — into session
 context as a `[UI LANGUAGE] <tag>` block (next to `[CURRENT AGENT]`/`[RUNTIME]`,
 and in `minimal_context` mode as well). It exists for one string: the tool-call

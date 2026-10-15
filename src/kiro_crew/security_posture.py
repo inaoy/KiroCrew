@@ -1816,6 +1816,7 @@ NON_EGRESS_REDACTION_MODULES: frozenset[str] = frozenset(
         # Inbound / gate-side: redacts what comes IN or what a gate logs, not what
         # goes out to a human.
         "context.py",
+        "context_assembly/session_start.py",
         "agent.py",
         # Capture-side, not egress: redacts a Slack thread's first message as it
         # is READ from Slack, before the text is kept for the model's fenced

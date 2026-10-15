@@ -74,6 +74,7 @@ PLUMBING: frozenset[tuple[str, str]] = frozenset(
         ("kiro_crew/context.py", "read_messages"),
         ("kiro_crew/context.py", "read_messages_chained"),
         ("kiro_crew/context.py", "recent"),
+        ("kiro_crew/context_assembly/turn_message.py", "recent"),
         ("kiro_crew/dashboard/channel_slots.py", "read_messages"),
         # The chat handlers' resume and slot-detail owners, composed into
         # chat_handlers: the same resume and render reads it made.

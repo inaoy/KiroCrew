@@ -32,7 +32,7 @@ session subprocess runs with the chat slot's project directory as its working
 directory. On the Claude Code backend, which does not read an agent spec's
 `resources` array, the gateway loads the global root explicitly —
 `steering_target_admissible` and `_load_steering_resources` in
-`src/kiro_crew/context.py` glob the agent config's
+`src/kiro_crew/context_assembly/agent_spec.py` glob the agent config's
 `file://.kiro/steering/**/*.md` resource against `$HOME`.
 
 A workspace file therefore needs a project bound to the chat slot. With no

@@ -472,7 +472,8 @@ The two other places the model is handed a fan-out figure -- the spawn tool
 descriptions (`mcp_tools/spawn.py::schemas`, "You can run up to N sub-agents
 concurrently", followed in both branches by the note that each start also waits
 until host memory can hold it) and the `{{MAX_SUBAGENTS}}` prompt token
-(`context.py::_resolve_prompt_templates`) -- read the in-process registry only,
+(`context_assembly/agent_spec.py::_resolve_prompt_templates`) -- read the in-process
+registry only,
 through `resource_status.adaptive_exec_cap()`, and never the loopback API: the
 prompt token is resolved once per session -- a session start takes the reading
 and the restore of the contract after compaction reuses it, unless the memo has

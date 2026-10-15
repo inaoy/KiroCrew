@@ -1,6 +1,6 @@
 # Jev Decision Seam
 
-Owners: `src/kiro_crew/decisions/`, `src/kiro_crew/context.py`, `src/kiro_crew/config/sections_decisions.py`, `src/kiro_crew/dashboard/handlers/decisions.py`, the strip hand-off, the tool-card annotation hook and the model-routing hook in `src/kiro_crew/dashboard/chat_runner.py`, the `message.steer` call site in `src/kiro_crew/dashboard/chat_api/chat_send.py` with the two stamps in `src/kiro_crew/dashboard/chat_delivery.py`, the `Auto (Jev)` picker entry in `website/src/lib/jevRoute.ts`, and the Decisions card in `website/src/pages/settings/DecisionsCard.tsx` (mounted by `FeaturePreviewsSection.tsx`, read by `pages/settings/decisionsPreview.ts`).
+Owners: `src/kiro_crew/decisions/`, `src/kiro_crew/context.py` with `src/kiro_crew/context_assembly/turn_message.py`, `src/kiro_crew/config/sections_decisions.py`, `src/kiro_crew/dashboard/handlers/decisions.py`, the strip hand-off, the tool-card annotation hook and the model-routing hook in `src/kiro_crew/dashboard/chat_runner.py`, the `message.steer` call site in `src/kiro_crew/dashboard/chat_api/chat_send.py` with the two stamps in `src/kiro_crew/dashboard/chat_delivery.py`, the `Auto (Jev)` picker entry in `website/src/lib/jevRoute.ts`, and the Decisions card in `website/src/pages/settings/DecisionsCard.tsx` (mounted by `FeaturePreviewsSection.tsx`, read by `pages/settings/decisionsPreview.ts`).
 
 ## 1. Scope
 

@@ -9,9 +9,10 @@ of member-authority markers before the genuine headers are minted around it.
 
 Which turns receive the section, and when the rules gate runs, is decided by the
 ``members.member_turn_context`` chokepoint at the call sites in
-:mod:`kiro_crew.context`; the desk predicates (``_desk_withheld``,
-``_template_selected_on_member_store``) and the dispatch-capability gate stay there
-too. ``ContextBuilder._build_member_section`` and ``_build_v2_essentials`` delegate
+``ContextBuilder.build_message`` and ``build_session_context``; the desk predicates
+(``_desk_withheld``, ``_template_selected_on_member_store``) and the
+dispatch-capability gate live in :mod:`kiro_crew.context_assembly.member_gates`.
+``ContextBuilder._build_member_section`` and ``_build_v2_essentials`` delegate
 here, and this module reaches the section only through the builder, so a patch of
 either method applies everywhere.
 
