@@ -157,7 +157,9 @@ interface ComposerDockViewProps {
   handleOptimizeResult: (slot: string | null, optimized: string) => void
   search: ReturnType<typeof useChatPageResourcesController>['search']
   tabsCtl: ReturnType<typeof useChatPageResourcesController>['tabsCtl']
-  uploadCancellable: boolean
+  /** Live uploads `cancelUpload` aborts: above zero the control is offered,
+   *  above one its label names the count. */
+  uploadCount: number
   sendHeld: boolean
   composerBandRef: (el: HTMLDivElement | null) => void
   scrollBottom: (instant?: boolean) => void
@@ -260,7 +262,7 @@ export default function ComposerDockView({
   setModelFilter, onAgentListKeyDown, onModelListKeyDown, anchorModelBtn, modelBtnRect, messageQuote, applyAutomationChange, automation, automationCreationReady, automationOpen,
   automationSnapshotFailed, setAutomationOpen, prefillHint, setPrefillHint, pasteSlice, pendingFiles, pendingSessions, resizedInfo, unstageSessionRef, uploading, agentBtnRect, anchorAgentBtn,
   projectPickerOpen, setProjectPickerOpen, anchorProjectBtn, projectBtnRect, pendingDirs, composerRef, composerVoiceOptions, isMac, cancelUpload, composerUploadFiles, dropTargetProps, handleCapture,
-  handleFileOpen, handleOptimizeResult, search, tabsCtl, uploadCancellable, sendHeld, composerBandRef, scrollBottom, handleResumeSession, composerRootChange, composerUserEdit, followUpMulti,
+  handleFileOpen, handleOptimizeResult, search, tabsCtl, uploadCount, sendHeld, composerBandRef, scrollBottom, handleResumeSession, composerRootChange, composerUserEdit, followUpMulti,
   followUpOptions, followUpPicked, followUpPickedRef, followUpSourceKey, toggleFollowUpOption, dashCfg, jevAutoConsented, refusedPress, setRefusedPress, send, pickModel, setProject, switchAgent,
   currentSlot, activeFolderName, anchorSessionControl, openSessionControl, refreshSessionControlStatuses, sessionControlKey, sessionControlRect, sessionControls, setOpenSessionControl,
   activeAgentName, attachmentAnnouncement, clampOutOfTokens, handleAddToContext, mentionKeyEdit, optimizerMentionGuard, removeDirChip, removeFileChip, selectPickedFile, followupAddToSession,
@@ -478,7 +480,8 @@ export default function ComposerDockView({
               /* Only while the active slot has a live upload request, whichever
                  host started it. `uploading` is shared with the screenshot
                  path, which has no request to cancel. */
-              onCancelUpload={uploadCancellable ? cancelUpload : undefined}
+              onCancelUpload={uploadCount > 0 ? cancelUpload : undefined}
+              uploadCount={uploadCount}
               /* The one collapsible composer. Opt-in rather than default so the
                  shared preference key and the window-level expand event stay
                  correct by construction -- see ChatInput's `collapsible` prop. */

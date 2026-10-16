@@ -6386,6 +6386,8 @@
       "approve_sub_agent": "सब-एजेंट को मंज़ूरी दो: {{name}}",
       "attach_files": "फ़ाइलें अटैच करें",
       "cancel_upload": "अपलोड रद्द करो",
+      "cancel_n_uploads_one": "{{count}} अपलोड रद्द करो",
+      "cancel_n_uploads_other": "{{count}} अपलोड रद्द करो",
       "send_waits_for_upload": "अटैचमेंट पूरा होने का इंतज़ार",
       "editor_unavailable_standard_input": "उन्नत संपादक लोड नहीं हो सका, इसलिए मानक इनपुट सक्रिय है। तुम्हारा ड्राफ़्ट अपरिवर्तित है।",
       "branch": "ब्रांच: {{branch}}",

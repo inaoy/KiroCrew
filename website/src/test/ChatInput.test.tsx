@@ -445,6 +445,22 @@ describe('ChatInput', () => {
       expect(onCancelUpload).toHaveBeenCalledTimes(1)
     })
 
+    /* #13071: one press aborts every upload in flight, so with two or more the
+     * label says how many stop rather than claiming a single one. */
+    it('names the count on the cancel control only when more than one upload is live', () => {
+      const { rerender } = renderWithProviders(<ChatInput {...defaultProps} onUploadFiles={vi.fn()} onCancelUpload={vi.fn()} uploading uploadCount={1} />)
+      const single = screen.getByRole('button', { name: 'Cancel upload' })
+      expect(single).toHaveAttribute('title', 'Cancel upload')
+
+      rerender(<ChatInput {...defaultProps} onUploadFiles={vi.fn()} onCancelUpload={vi.fn()} uploading uploadCount={2} />)
+      const counted = screen.getByRole('button', { name: 'Cancel 2 uploads' })
+      expect(counted).toHaveAttribute('title', 'Cancel 2 uploads')
+      expect(screen.queryByRole('button', { name: 'Cancel upload' })).not.toBeInTheDocument()
+
+      rerender(<ChatInput {...defaultProps} onUploadFiles={vi.fn()} onCancelUpload={vi.fn()} uploading uploadCount={1} />)
+      expect(screen.getByRole('button', { name: 'Cancel upload' })).toBeInTheDocument()
+    })
+
     /* A send fired mid-upload left without the file, and the file then landed
      * in the emptied composer as a stray attachment for the next message. */
     it('holds Send and Enter while an attachment is on its way', () => {

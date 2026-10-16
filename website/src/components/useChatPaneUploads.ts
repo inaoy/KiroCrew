@@ -13,7 +13,7 @@ import {
   finishComposerAttachment,
   unregisterComposerUpload,
   useComposerSendHeld,
-  useComposerUploadCancellable,
+  useComposerUploadCount,
 } from '../utils/composerSendHolds'
 import { i18nT } from '../i18n/t'
 import type { AppDispatch } from '../store'
@@ -92,7 +92,7 @@ export function useChatPaneUploads({ slotKey, dispatch, slotKeyRef, mountedRef, 
   // Shared per-slot holds survive a pane remount. Mutation callbacks still
   // release their hold after the pane that started the upload unmounts.
   const sendHeld = useComposerSendHeld(slotKey)
-  const uploadCancellable = useComposerUploadCancellable(slotKey)
+  const uploadCount = useComposerUploadCount(slotKey)
   const uploadMutation = useMutation({
     // 'always', not the default 'online': an offline browser would PAUSE the
     // mutation before mutationFn, so onSettled (the only release of the shared
@@ -179,7 +179,7 @@ export function useChatPaneUploads({ slotKey, dispatch, slotKeyRef, mountedRef, 
   const { active: dragOver, dropTargetProps } = useChatFileDrop(handleDrop)
 
   return {
-    uploadError, setUploadError, uploadHint, setUploadHint, sendHeld, uploadCancellable, uploadMutation,
+    uploadError, setUploadError, uploadHint, setUploadHint, sendHeld, uploadCount, uploadMutation,
     cancelUpload, uploadFiles, dragOver, dropTargetProps,
   }
 }

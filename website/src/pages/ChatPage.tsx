@@ -436,7 +436,7 @@ export default function ChatPage({ mode, embedded, embedMode, popout, noUrlSync 
     handleSnipCancel,
     composerUploadFiles,
     cancelUpload,
-    uploadCancellable,
+    uploadCount,
     handleOptimizeResult,
     dragOver,
     dropTargetProps,
@@ -1049,7 +1049,7 @@ export default function ChatPage({ mode, embedded, embedMode, popout, noUrlSync 
               anchorAgentBtn={anchorAgentBtn} projectPickerOpen={projectPickerOpen} setProjectPickerOpen={setProjectPickerOpen} anchorProjectBtn={anchorProjectBtn} projectBtnRect={projectBtnRect}
               pendingDirs={pendingDirs} composerRef={composerRef} composerVoiceOptions={composerVoiceOptions} isMac={isMac} cancelUpload={cancelUpload} composerUploadFiles={composerUploadFiles}
               dropTargetProps={dropTargetProps} handleCapture={handleCapture} handleFileOpen={handleFileOpen} handleOptimizeResult={handleOptimizeResult} search={search} tabsCtl={tabsCtl}
-              uploadCancellable={uploadCancellable} sendHeld={sendHeld} composerBandRef={composerBandRef} scrollBottom={scrollBottom} handleResumeSession={handleResumeSession}
+              uploadCount={uploadCount} sendHeld={sendHeld} composerBandRef={composerBandRef} scrollBottom={scrollBottom} handleResumeSession={handleResumeSession}
               composerRootChange={composerRootChange} composerUserEdit={composerUserEdit} followUpMulti={followUpMulti} followUpOptions={followUpOptions} followUpPicked={followUpPicked}
               followUpPickedRef={followUpPickedRef} followUpSourceKey={followUpSourceKey} toggleFollowUpOption={toggleFollowUpOption} dashCfg={dashCfg} jevAutoConsented={jevAutoConsented}
               refusedPress={refusedPress} setRefusedPress={setRefusedPress} send={send} pickModel={pickModel} setProject={setProject} switchAgent={switchAgent} currentSlot={currentSlot}

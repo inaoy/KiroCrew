@@ -101,6 +101,7 @@
   "components.artifactPanel.comment",
   "components.autoNudgePopover.judge_verdict",
   "components.autoNudgePopover.judge_verdict_untimed",
+  "components.chatInput.cancel_n_uploads",
   "components.chatInput.spawn_awaiting",
   "components.chatInput.spawn_pending",
   "components.commentOverlay.comment",

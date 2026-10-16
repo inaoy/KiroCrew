@@ -228,7 +228,8 @@ describe.each([
     await act(async () => { pasteImage(screen.getByLabelText('Message input'), 'second.png') })
     await waitFor(() => expect(uploads).toHaveLength(2))
     await act(async () => { fireEvent.change(screen.getByLabelText('Message input'), { target: { value: 'both' } }) })
-    expect(screen.getByRole('button', { name: 'Cancel upload' })).toBeInTheDocument()
+    // Two live, and one press aborts both: the label names the count (#13071).
+    expect(screen.getByRole('button', { name: 'Cancel 2 uploads' })).toBeInTheDocument()
 
     // The LATER request settles first. Send is still held for the first one,
     // so the user must still be able to see and abort it: a host feeding
@@ -239,7 +240,7 @@ describe.each([
 
     await act(async () => { uploads[0]({ paths: ['/up/first.txt'] }) })
     await waitFor(() => expect(sendButton()).not.toBeDisabled())
-    expect(screen.queryByRole('button', { name: 'Cancel upload' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Cancel (\d+ uploads|upload)$/ })).toBeNull()
   })
 })
 

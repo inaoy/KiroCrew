@@ -141,11 +141,13 @@ export function usePlusMenu({ pickers, value, onChange, composerControl, fileInp
   return { plusOpen, setPlusOpen, sketchOpen, setSketchOpen, plusWrapRef, plusBtnRef, plusMenuRef, plusRect, togglePlus, openTrigger }
 }
 
-export function AttachMenu({ plus, onUploadFiles, uploading, onCancelUpload, directFilePicker, collapsible, fileInputId, openPicker, isMac, isMobile, onScreenshot, collapseMenuRow, typedCommandMenus, onFileSelect }: {
+export function AttachMenu({ plus, onUploadFiles, uploading, onCancelUpload, uploadCount, directFilePicker, collapsible, fileInputId, openPicker, isMac, isMobile, onScreenshot, collapseMenuRow, typedCommandMenus, onFileSelect }: {
   plus: ReturnType<typeof usePlusMenu>
   onUploadFiles?: (files: File[]) => void
   uploading: boolean
   onCancelUpload?: () => void
+  /** Uploads the cancel control aborts; above one, its label names the count. */
+  uploadCount: number
   directFilePicker: boolean
   collapsible: boolean
   fileInputId: string
@@ -185,13 +187,18 @@ export function AttachMenu({ plus, onUploadFiles, uploading, onCancelUpload, dir
    * ends the transfer, and the control has to stop reading as the attach
    * button's spot doing attach things.
    */
+  // One press aborts EVERY upload in flight (paste, a drop and a Sketch insert
+  // all start one ungated), so with two or more the label says how many stop.
+  const cancelLabel = uploadCount > 1
+    ? i18nT('components.chatInput.cancel_n_uploads', { count: uploadCount })
+    : i18nT('components.chatInput.cancel_upload')
   const uploadCancelControl = uploading && onCancelUpload ? (
     <button
       type="button"
       onClick={onCancelUpload}
       className="relative w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer transition-all bg-transparent border-none text-muted hover:text-danger-text hover:bg-danger/10"
-      aria-label={i18nT('components.chatInput.cancel_upload')}
-      title={i18nT('components.chatInput.cancel_upload')}
+      aria-label={cancelLabel}
+      title={cancelLabel}
     >
       <Loader2 size={28} strokeWidth={1.5} className="animate-spin absolute inset-0 m-auto opacity-30" />
       <X size={16} strokeWidth={2.5} />
