@@ -32,6 +32,7 @@ from collections import Counter
 from pathlib import Path
 from types import ModuleType
 
+import facade_mirror_scan
 import pytest
 import source_corpus
 
@@ -371,242 +372,37 @@ def test_the_package_serves_the_facades_objects() -> None:
 # Patch reach
 # --------------------------------------------------------------------------- #
 
-
-def _dotted(node: ast.expr) -> str | None:
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        head = _dotted(node.value)
-        return None if head is None else f"{head}.{node.attr}"
-    return None
-
-
-def _receivers(tree: ast.Module) -> tuple[set[str], set[str]]:
-    """Local names bound to the facade, and to the ``kiro_crew.crew_log`` package."""
-    facade, package = set(), set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module and not node.level:
-            for alias in node.names:
-                full = f"{node.module}.{alias.name}"
-                if full == FACADE:
-                    facade.add(alias.asname or alias.name)
-                elif full == "kiro_crew.crew_log":
-                    package.add(alias.asname or alias.name)
-        elif isinstance(node, ast.Import):
-            for alias in node.names:
-                if alias.name == FACADE:
-                    facade.add(alias.asname or FACADE)
-                elif alias.name == "kiro_crew.crew_log":
-                    package.add(alias.asname or "kiro_crew.crew_log")
-        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
-            call = node.value
-            if (
-                _dotted(call.func) in {"importlib.import_module", "import_module"}
-                and call.args
-                and isinstance(call.args[0], ast.Constant)
-                and call.args[0].value in (FACADE, "kiro_crew.crew_log")
-            ):
-                into = facade if call.args[0].value == FACADE else package
-                into.update(t.id for t in node.targets if isinstance(t, ast.Name))
-    return facade, package
-
-
-def patched_names(source: str, forwarded: frozenset[str]) -> set[str]:
-    """Every name *source* patches on the facade, directly or through the package names
-    the package forwards to it, by any spelling a test uses."""
-    tree = ast.parse(source)
-    facade, package = _receivers(tree)
-
-    def through(receiver: ast.expr, name: str) -> bool:
-        dotted = _dotted(receiver)
-        if dotted is None:
-            return False
-        if dotted in facade or dotted == FACADE:
-            return True
-        head, _, last = dotted.rpartition(".")
-        if last == "entry_types" and (head in package or head == "kiro_crew.crew_log"):
-            return True
-        return (dotted in package or dotted == "kiro_crew.crew_log") and name in forwarded
-
-    found: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Assign, ast.AugAssign, ast.Delete)):
-            targets = node.targets if isinstance(node, (ast.Assign, ast.Delete)) else [node.target]
-            for target in targets:
-                if isinstance(target, ast.Attribute) and through(target.value, target.attr):
-                    found.add(target.attr)
-            continue
-        if not isinstance(node, ast.Call):
-            continue
-        leaf = (_dotted(node.func) or "").rpartition(".")[2]
-        args = node.args
-        target = args[0] if args else None
-        if isinstance(target, ast.Constant) and isinstance(target.value, str):
-            # A string target names the module, and for these three the attribute too.
-            if leaf in {"setattr", "delattr", "patch"}:
-                head, _, name = target.value.rpartition(".")
-                if head == FACADE or (head == "kiro_crew.crew_log" and name in forwarded):
-                    found.add(name)
-            elif leaf == "multiple" and target.value in (FACADE, "kiro_crew.crew_log"):
-                found.update(
-                    k.arg
-                    for k in node.keywords
-                    if k.arg and (target.value == FACADE or k.arg in forwarded)
-                )
-            continue
-        if leaf in {"setattr", "delattr", "object"} and len(args) >= 2:
-            name = args[1]
-            if isinstance(name, ast.Constant) and isinstance(name.value, str):
-                if through(args[0], name.value):
-                    found.add(name.value)
-            continue
-        if leaf == "multiple" and args:
-            found.update(k.arg for k in node.keywords if k.arg and through(args[0], k.arg))
-    return found
-
-
+#: The facade's own spelling, and the package's: a patch of a name the package forwards
+#: to the facade lands on the facade, since ``kiro_crew.crew_log`` writes through.
+_SPELLINGS = {FACADE: FACADE, "kiro_crew.crew_log": "kiro_crew.crew_log"}
 _FORWARDED = frozenset(
     n for n, owner in crew_log_package._EXPORTS.items() if owner == "entry_types"
 )
 
 
-@pytest.mark.parametrize(
-    ("source", "expected"),
-    [
-        (
-            "from kiro_crew.crew_log import entry_types\n"
-            "def t(monkeypatch):\n    monkeypatch.setattr(entry_types, 'A', 1)\n",
-            {"A"},
-        ),
-        (
-            "from kiro_crew.crew_log import entry_types as reg\n"
-            "def t(monkeypatch):\n    monkeypatch.delattr(reg, 'B')\n",
-            {"B"},
-        ),
-        (
-            "import kiro_crew.crew_log.entry_types as et\n"
-            "from unittest import mock\n"
-            "def t():\n    with mock.patch.object(et, 'C'):\n        pass\n",
-            {"C"},
-        ),
-        (
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.entry_types.D', 1)\n",
-            {"D"},
-        ),
-        (
-            "from unittest.mock import patch\n"
-            "def t():\n    with patch('kiro_crew.crew_log.entry_types.E'):\n        pass\n",
-            {"E"},
-        ),
-        (
-            "import importlib\n"
-            "M = importlib.import_module('kiro_crew.crew_log.entry_types')\n"
-            "def t(monkeypatch):\n    monkeypatch.setattr(M, 'F', 1)\n",
-            {"F"},
-        ),
-        (
-            "from kiro_crew.crew_log import entry_types\n"
-            "from unittest import mock\n"
-            "def t():\n    with mock.patch.multiple(entry_types, G=1):\n        pass\n",
-            {"G"},
-        ),
-        (
-            "from kiro_crew.crew_log import entry_types as reg\n"
-            "def t():\n    reg.H = 1\n    del reg.I\n",
-            {"H", "I"},
-        ),
-        (
-            "import kiro_crew.crew_log as pkg\n"
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr(pkg, 'Field', 1)\n"
-            "    monkeypatch.setattr(pkg, 'CrewLog', 1)\n",
-            {"Field"},
-        ),
-        (
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.validate_data', 1)\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.CrewLog', 1)\n",
-            {"validate_data"},
-        ),
-        (
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.entry_types.M', 'm/x')\n"
-            "    monkeypatch.delattr('kiro_crew.crew_log.entry_types.N', raising=False)\n",
-            {"M", "N"},
-        ),
-        (
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.declaration_for', 'v')\n",
-            {"declaration_for"},
-        ),
-        (
-            "from unittest import mock\n"
-            "def t():\n"
-            "    with mock.patch.multiple('kiro_crew.crew_log.entry_types', O=1):\n"
-            "        pass\n"
-            "    with mock.patch.multiple('kiro_crew.crew_log', Field=1, CrewLog=1):\n"
-            "        pass\n",
-            {"O", "Field"},
-        ),
-        (
-            "from kiro_crew import crew_log as lg\n"
-            "def t(monkeypatch):\n    monkeypatch.setattr(lg.entry_types, 'P', ())\n",
-            {"P"},
-        ),
-        (
-            "import kiro_crew.crew_log.store\n"
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr(kiro_crew.crew_log.entry_types, 'Q', ())\n"
-            "    monkeypatch.setattr(kiro_crew.crew_log, 'render_markdown', 1)\n",
-            {"Q", "render_markdown"},
-        ),
-        # Another module's patch, a dict item, and a name chosen at run time.
-        (
-            "from kiro_crew.crew_log import store\n"
-            "def t(monkeypatch):\n    monkeypatch.setattr(store, 'X', 1)\n",
-            set(),
-        ),
-        (
-            "from kiro_crew.crew_log.entry_types import ENTRY_TYPES\n"
-            "def t(monkeypatch):\n    monkeypatch.setitem(ENTRY_TYPES, 'crew', {})\n",
-            set(),
-        ),
-        (
-            "from kiro_crew.crew_log import entry_types\n"
-            "def t(monkeypatch, name):\n    monkeypatch.setattr(entry_types, name, 1)\n",
-            set(),
-        ),
-        (
-            "def t(monkeypatch):\n"
-            "    monkeypatch.setattr('kiro_crew.crew_log.entry_types_ledgers.Y', 1)\n",
-            set(),
-        ),
-    ],
-    ids=[
-        "monkeypatch-alias",
-        "delattr-renamed-alias",
-        "patch-object-import-as",
-        "dotted-setattr",
-        "mock-patch-string",
-        "import-module",
-        "patch-multiple",
-        "plain-assignment-and-del",
-        "package-object-forwarded",
-        "package-string-forwarded",
-        "dotted-string-with-string-value",
-        "package-string-with-string-value",
-        "patch-multiple-string-target",
-        "package-alias-attribute-receiver",
-        "full-dotted-receiver",
-        "other-module",
-        "dict-item",
-        "name-chosen-at-run-time",
-        "owner-module-string",
-    ],
-)
-def test_the_patch_scan_finds_every_spelling(source: str, expected: set[str]) -> None:
-    assert patched_names(source, _FORWARDED) == expected
+def _names_patched_through_the_facade(source: str) -> set[str]:
+    """The names *source* patches on the facade, directly or through a name the package
+    forwards to it, as the shared scanner (:mod:`facade_mirror_scan`) reads them."""
+    found = facade_mirror_scan.patched_names(source, _SPELLINGS)
+    return found.get(FACADE, set()) | (found.get("kiro_crew.crew_log", set()) & _FORWARDED)
+
+
+def test_the_patch_scan_reads_the_facade_and_the_forwarding_package() -> None:
+    """The wiring above; the scanner's own spellings are tested with the scanner."""
+    source = (
+        "import kiro_crew.crew_log as pkg\n"
+        "from kiro_crew.crew_log import entry_types as reg\n"
+        "def t(monkeypatch):\n"
+        "    monkeypatch.setattr(reg, 'RADAR_PHASES', ())\n"
+        "    monkeypatch.setattr('kiro_crew.crew_log.entry_types.PANEL_FOLD_NAME', 'x')\n"
+        "    monkeypatch.setattr(pkg, 'Field', 1)\n"
+        "    monkeypatch.setattr(pkg, 'CrewLog', 1)\n"
+    )
+    assert _names_patched_through_the_facade(source) == {
+        "RADAR_PHASES",
+        "PANEL_FOLD_NAME",
+        "Field",
+    }
 
 
 def _test_tree_files() -> list[Path]:
@@ -629,7 +425,7 @@ def _corpus_patched_names() -> tuple[frozenset[str], int]:
         if "crew_log" not in text:
             continue
         read += 1
-        found |= patched_names(text, _FORWARDED)
+        found |= _names_patched_through_the_facade(text)
     return frozenset(found), read
 
 
@@ -641,6 +437,24 @@ def test_every_name_the_tests_patch_through_the_facade_is_the_facades_own() -> N
     assert read >= 20, "the scan read almost nothing: the corpus filter stopped matching"
     owner_defined = set().union(*_owner_defined().values())
     assert sorted(found & owner_defined) == []
+
+
+def test_the_family_modules_hold_nothing_that_runs_after_import() -> None:
+    """What keeps a facade patch from missing a reader is that no owner reads a name
+    after it is imported: a family module is declarations, so its only functions are
+    the builders its declarations call while it loads. The leaf's two records and its
+    field builder are the one other exception."""
+    allowed = {
+        LEAF: {"Field", "EntryType", "_turn"},
+        "kiro_crew.crew_log.entry_types_surfaces": {"_conversation_row"},
+    }
+    for name, path in _owner_paths().items():
+        defined = {
+            node.name
+            for node in ast.walk(_parsed(path))
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        }
+        assert defined - {"__post_init__", "required_names"} == allowed.get(name, set()), name
 
 
 def test_the_owners_are_plain_modules() -> None:
