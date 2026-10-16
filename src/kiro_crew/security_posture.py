@@ -2488,14 +2488,19 @@ NON_EGRESS_REDACTION_MODULES: frozenset[str] = frozenset(
         "slack/renderer.py",
         "slack/sessions_view.py",
         # The owners composed into slack/handler.py, in the same class as that
-        # facade: they redact the answer stream, the approval prompts, the command
-        # replies and the thread context the native turn posts or reads, and
-        # slack/handler.py stays the registered "Slack messages" sink for all of
-        # it, so the split adds no egress path of its own.
+        # facade: they redact the answer stream and the final answer, the
+        # approval prompts and tool titles, the command and keyword replies, the
+        # turn's error text and the thread context the native turn posts or
+        # reads, and slack/handler.py stays the registered "Slack messages" sink
+        # for all of it, so the split adds no egress path of its own.
         "slack/handler_runtime/approvals.py",
         "slack/handler_runtime/commands.py",
+        "slack/handler_runtime/delivery.py",
+        "slack/handler_runtime/dispatch.py",
         "slack/handler_runtime/inbound.py",
+        "slack/handler_runtime/permission_ladder.py",
         "slack/handler_runtime/stream.py",
+        "slack/handler_runtime/turn.py",
         "slack/handler_runtime/turn_context.py",
         # The owners composed into slack/gateway.py, in the same class as that
         # facade: they redact the install-repair, update and boot logs, the
