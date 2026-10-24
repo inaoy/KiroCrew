@@ -619,7 +619,7 @@ describe('PullRequestPanel', () => {
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     client.setQueryData<PullRequestSource>(['pull-request-source', github.url], github, {
-      updatedAt: Date.now() - SOURCE_REMOUNT_REVALIDATE_MS - 1_000,
+      updatedAt: Date.now() - SOURCE_REMOUNT_REVALIDATE_MS - 1_000, // flake-ok: ages the retained payload past the remount window
     })
     render(
       <QueryClientProvider client={client}>
